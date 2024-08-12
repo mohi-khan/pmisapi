@@ -1,20 +1,23 @@
 {
-  "name": "pmisApi",
+  "name": "pmisapi",
   "scripts": {
-    "dev": "tsx watch src/index.ts"
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node index.js"
   },
   "dependencies": {
     "@hono-storage/core": "^0.0.13",
     "@hono/node-server": "^1.12.0",
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.4.5",
-    "formidable": "^3.5.1",
     "hono": "^4.5.1",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.12.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
-    "@types/node": "^20.11.17",
+    "@types/node": "^20.14.15",
+    "@types/pg": "^8.11.6",
     "tsx": "^4.7.1"
   }
 }

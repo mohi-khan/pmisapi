@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import {drizzle} from  "drizzle-orm/node-postgres";
+import { drizzle } from "drizzle-orm/node-postgres";
 require('dotenv').config();
 //console.log(process.env.DB_USER);
 const pool = new Pool({
@@ -7,5 +7,6 @@ const pool = new Pool({
     host: process.env.DB_HOST,
     database: process.env.DB_NAME,
     password: process.env.DB_PASSWORD,
-    port:   +(process.env.DB_PORT ?? 3000)})
-  export const db = drizzle(pool);
+    port: +(process.env.DB_PORT ?? 3000)
+});
+export const db = drizzle(pool);

@@ -820,7 +820,7 @@ app.get('/sparedetails',async(c)=>{
     return c.json(formattedParts);
 })
 
-const port = 8779
+const port =  +(process.env.DB_PORT ?? 8779)
 console.log(`Server is running on port ${port}`)
 
 serve({
