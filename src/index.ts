@@ -795,7 +795,7 @@ app.get('/sparedetails',async(c)=>{
     e.equipmentname AS equipment_name, e.model AS equipment_model FROM
     spareparts s,unnest(s.equipmentid) AS equipment_id_array(eid) JOIN
     equipment e ON e.equipmentid = eid::integer`) 
-    const formattedParts = result.rows.reduce((acc:parts[], part:SparePart) => {
+    const formattedParts: parts[] = result.rows.reduce((acc:parts[], part:SparePart) => {
       // Check if the partname already exists in acc
       const existingPart = acc.find((item) => item.part_code === part.part_code);
   
@@ -815,7 +815,7 @@ app.get('/sparedetails',async(c)=>{
       }
   
       return acc;
-    }, [] as { partname: string; equipmentdesc: string[] }[]);
+    }, []  as parts[]);  // Corrected accumulator type
   
     return c.json(formattedParts);
 })
