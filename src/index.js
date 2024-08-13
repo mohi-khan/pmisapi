@@ -39,7 +39,7 @@ app.post('/vendor', bearerAuth({ token }), async (c) => {
     try {
         const { name, telno, address, username } = await c.req.json();
         const newvendor = await db.insert(vendors).values({ vendorname: name, telno: telno, address: address, username: username }).returning();
-        return c.json({ success: true, data: newvendor }, 200);
+        return c.json({success: true, data: newvendor }, 200);
     }
     catch (error) {
         console.error('Error inserting data:', error);

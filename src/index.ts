@@ -1,4 +1,5 @@
 require('dotenv').config();
+import { z } from "zod";
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import {  type Context } from 'hono';
@@ -777,25 +778,31 @@ WHERE
 }
 })
 app.get('/sparedetails',async(c)=>{
+  const SparePartSchema = z.object({
+    part_code: z.string(),
+    spare_part_name: z.string(),
+    equipment_id: z.number(),
+    equipment_name: z.string(),
+    equipment_model: z.string(),
+  });
+  
+  // Define types using Zod schemas
+  type SparePart = z.infer<typeof SparePartSchema>;
   interface parts{
     part_code:string,
     partname: string; 
     equipment_id:number[];
     equipmentdesc: string[] 
   }
-  interface SparePart {
-    part_code:string,
-    spare_part_name: string;
-    equipment_id:number;
-    equipment_name: string;
-    equipment_model: string;
-  }
+
   const result=await db.execute(sql`SELECT s.partid as part_code,s.partname AS spare_part_name,
     e.equipmentid AS equipment_id,
     e.equipmentname AS equipment_name, e.model AS equipment_model FROM
     spareparts s,unnest(s.equipmentid) AS equipment_id_array(eid) JOIN
     equipment e ON e.equipmentid = eid::integer`) 
-    const formattedParts: parts[] = result.rows.reduce((acc:any[], part:SparePart) => {
+    const parsedRows = z.array(SparePartSchema).parse(result.rows);
+
+    const formattedParts: parts[] = parsedRows.reduce((acc:parts[], part:SparePart) => {
       // Check if the partname already exists in acc
       const existingPart = acc.find((item) => item.part_code === part.part_code);
   
