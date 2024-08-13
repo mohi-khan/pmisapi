@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "moduleResolution": "Node",
     "strict": true,
     "skipLibCheck": true,
     "types": [
@@ -10,5 +10,10 @@
     ],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
-  }
+    "outDir": "dist",
+     "rootDir": "src",  // Specify the root directory of your TypeScript files
+    "esModuleInterop": true // Ensures compatibility with CommonJS modules
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"], // Include all .ts and .tsx files in the src directory
+  "exclude": ["node_modules"]
 }

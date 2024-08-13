@@ -3,8 +3,9 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node index.js"
+    "start": "npm run build && node dist/index.js"
   },
+  "type": "module",
   "dependencies": {
     "@hono-storage/core": "^0.0.13",
     "@hono/node-server": "^1.12.0",

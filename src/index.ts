@@ -11,9 +11,9 @@ import { cors } from 'hono/cors';
 import { bearerAuth } from 'hono/bearer-auth';
 import bcrypt from "bcryptjs";
 import { ConsoleLogWriter, sql } from 'drizzle-orm' 
-import {eq,ne} from 'drizzle-orm'
-import {db} from './db/db'
-import {users} from './db/schema/user'
+import {eq,ne} from 'drizzle-orm';
+import { db } from "./db/db";
+import {users} from './db/schema/user';
 import { employees } from './db/schema/employee';
 import { equipment } from './db/schema/equipment';
 import { vendors } from './db/schema/vendor';
@@ -729,44 +729,50 @@ WHERE
  return c.json(overdue.rows);
 })
 app.get('/notificationcount',async(c)=>{
-try{
-  interface myresult{
-    count: string,
-    status: string,
-  }
-  const overdue=await db.execute(sql`select count(*),
-    CASE
-        WHEN et.nextschdate IS NOT NULL AND et.nextschdate < CURRENT_DATE THEN 'Overdue'
-        WHEN et.nextschh IS NOT NULL AND et.nextschh > 0 AND et.nextschh < eq.runninghours THEN 'Overdue'
-        WHEN et.nextschk IS NOT NULL AND et.nextschk > 0 AND et.nextschk < eq.milagemeter THEN 'Overdue'
-        WHEN et.nextschdate IS NOT NULL AND et.nextschdate <= (CURRENT_DATE + et.advancenoticetime * interval '1 day') THEN 'Advance Notice'
-        WHEN et.nextschh IS NOT NULL AND et.nextschh > 0 AND et.nextschh <= (eq.runninghours + et.advancenoticetime) THEN 'Advance Notice'
-        WHEN et.nextschk IS NOT NULL AND et.nextschk > 0 AND et.nextschk <= (eq.milagemeter + et."advanceNoticekm") THEN 'Advance Notice'
-        ELSE 'On Time'
-    END AS noticestatus
-FROM
-    public.equipmenttasksch et
-JOIN
-    public.equipment eq ON et.equipmentid = eq.equipmentid
-JOIN
-    public.tasks tk ON et.taskid = tk.taskid
-WHERE
-    (et.nextschdate IS NOT NULL AND et.nextschdate < CURRENT_DATE)
-    OR (et.nextschh IS NOT NULL AND et.nextschh > 0 AND et.nextschh < eq.runninghours)
-    OR (et.nextschk IS NOT NULL AND et.nextschk > 0 AND et.nextschk < eq.milagemeter)
-    OR (et.nextschdate IS NOT NULL AND et.nextschdate <= (CURRENT_DATE + et.advancenoticetime * interval '1 day'))
-    OR (et.nextschh IS NOT NULL AND et.nextschh > 0 AND et.nextschh <= (eq.runninghours + et.advancenoticetime))
-    OR (et.nextschk IS NOT NULL AND et.nextschk > 0 AND et.nextschk <= (eq.milagemeter + et."advanceNoticekm"))
-  group by noticestatus`);
-  const results:myresult[] = overdue.rows.map((row: { count: number, noticestatus: string }) => ({
-    count: row.count,
-    status: row.noticestatus,
-  }));
+  const myResultSchema = z.object({
+    count: z.number(),
+    status: z.string(),
+  });
+  
+  type MyResult = z.infer<typeof myResultSchema>; // Optional, to infer the TypeScript type
+ try{ 
+  // Assume 'overdue' is the result from your database query
+  const overdue = await db.execute(sql`
+    SELECT count(*),
+      CASE
+          WHEN et.nextschdate IS NOT NULL AND et.nextschdate < CURRENT_DATE THEN 'Overdue'
+          WHEN et.nextschh IS NOT NULL AND et.nextschh > 0 AND et.nextschh < eq.runninghours THEN 'Overdue'
+          WHEN et.nextschk IS NOT NULL AND et.nextschk > 0 AND et.nextschk < eq.milagemeter THEN 'Overdue'
+          WHEN et.nextschdate IS NOT NULL AND et.nextschdate <= (CURRENT_DATE + et.advancenoticetime * interval '1 day') THEN 'Advance Notice'
+          WHEN et.nextschh IS NOT NULL AND et.nextschh > 0 AND et.nextschh <= (eq.runninghours + et.advancenoticetime) THEN 'Advance Notice'
+          WHEN et.nextschk IS NOT NULL AND et.nextschk > 0 AND et.nextschk <= (eq.milagemeter + et."advanceNoticekm") THEN 'Advance Notice'
+          ELSE 'On Time'
+      END AS noticestatus
+    FROM public.equipmenttasksch et
+    JOIN public.equipment eq ON et.equipmentid = eq.equipmentid
+    JOIN public.tasks tk ON et.taskid = tk.taskid
+    WHERE 
+      (et.nextschdate IS NOT NULL AND et.nextschdate < CURRENT_DATE)
+      OR (et.nextschh IS NOT NULL AND et.nextschh > 0 AND et.nextschh < eq.runninghours)
+      OR (et.nextschk IS NOT NULL AND et.nextschk > 0 AND et.nextschk < eq.milagemeter)
+      OR (et.nextschdate IS NOT NULL AND et.nextschdate <= (CURRENT_DATE + et.advancenoticetime * interval '1 day'))
+      OR (et.nextschh IS NOT NULL AND et.nextschh > 0 AND et.nextschh <= (eq.runninghours + et.advancenoticetime))
+      OR (et.nextschk IS NOT NULL AND et.nextschk > 0 AND et.nextschk <= (eq.milagemeter + et."advanceNoticekm"))
+    GROUP BY noticestatus
+  `);
+  
+  const results: MyResult[] = overdue.rows.map((row: any) => {
+    const parsedRow = myResultSchema.parse({
+      count: row.count,
+      status: row.noticestatus,
+    });
+    return parsedRow;
+  });
 
   const messageParts = results.map((result) => {
     const status = result.status;
     const count = result.count;
-    const plural = parseInt(count) > 1 ? 's' : '';
+    const plural = count > 1 ? 's' : '';
     return `${count} ${status}${plural}`;
   });
 
