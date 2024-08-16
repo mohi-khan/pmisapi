@@ -1,5 +1,5 @@
 import { bigint, date, integer, pgTable,serial, varchar } from "drizzle-orm/pg-core";
-import { vendors } from "./vendor";
+import { vendors } from "./vendor.js";
 // Define the equipment table schema
 export const equipment = pgTable("equipment", {
   equipmentid: serial('equipmentid').primaryKey(),

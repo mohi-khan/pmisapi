@@ -10,6 +10,7 @@
     ],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
+    "outDir": "dist",
     "rootDir": "src", // Specify the root directory of your TypeScript files
     "esModuleInterop": true // Ensures compatibility with CommonJS modules
   },

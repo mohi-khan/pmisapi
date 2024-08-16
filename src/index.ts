@@ -1,4 +1,3 @@
-require('dotenv').config();
 import { z } from "zod";
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
@@ -12,19 +11,21 @@ import { bearerAuth } from 'hono/bearer-auth';
 import bcrypt from "bcryptjs";
 import { ConsoleLogWriter, sql } from 'drizzle-orm' 
 import {eq,ne} from 'drizzle-orm';
-import { db } from "./db/db";
-import {users} from './db/schema/user';
-import { employees } from './db/schema/employee';
-import { equipment } from './db/schema/equipment';
-import { vendors } from './db/schema/vendor';
-import { tasks } from './db/schema/tasks';
-import { equipmenttasksch } from './db/schema/equipmenttasksch';
-import { workorder } from './db/schema/workorder';
-import {spares} from './db/schema/spares';
-import { fuelentry } from './db/schema/fuel';
-import { reactiveMaintenance } from './db/schema/reactivemaintenance';
-import { milage } from './db/schema/milage';
+import { db } from "./db/db.js";
+import {users} from './db/schema/user.js';
+import { employees } from './db/schema/employee.js';
+import { equipment } from './db/schema/equipment.js';
+import { vendors } from './db/schema/vendor.js';
+import { tasks } from './db/schema/tasks.js';
+import { equipmenttasksch } from './db/schema/equipmenttasksch.js';
+import { workorder } from './db/schema/workorder.js';
+import {spares} from './db/schema/spares.js';
+import { fuelentry } from './db/schema/fuel.js';
+import { reactiveMaintenance } from './db/schema/reactivemaintenance.js';
+import { milage } from './db/schema/milage.js';
 import { error } from 'console';
+import dotenv from 'dotenv';
+dotenv.config();
 const app = new Hono()
 
 if (!process.env.TOKEN) {
@@ -833,7 +834,7 @@ app.get('/sparedetails',async(c)=>{
     return c.json(formattedParts);
 })
 
-const port =  +(process.env.DB_PORT ?? 8779)
+const port =  +(process.env.PORT ?? 8779)
 console.log(`Server is running on port ${port}`)
 
 serve({

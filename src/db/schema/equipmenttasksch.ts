@@ -1,6 +1,6 @@
 import { integer, pgTable,serial,varchar,date } from "drizzle-orm/pg-core";
-import { equipment } from "./equipment";
-import { tasks } from "./tasks";
+import { equipment } from "./equipment.js";
+import { tasks } from "./tasks.js";
 export const equipmenttasksch=pgTable('equipmenttasksch',{
     equipmenttaskschid:serial('equipmenttaskschid').primaryKey(),
     equipmentid:integer('equipmentid').references(()=>equipment.equipmentid),

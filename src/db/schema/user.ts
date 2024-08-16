@@ -1,5 +1,5 @@
 import {pgTable,serial,numeric,varchar} from 'drizzle-orm/pg-core';
-import { employees } from './employee';
+import { employees } from './employee.js';
 export const users = pgTable('users', {
     userid: serial('userid').primaryKey(),
     employeeid: numeric('employeeid').references(() => employees.employeeid),
