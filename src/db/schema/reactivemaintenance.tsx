@@ -17,7 +17,7 @@ export const reactiveMaintenance = pgTable("reactivemaintenance", {
   dateofmaintenance: date("dateofmaintenance").notNull(),
   problemdescription: text("problemdescription").notNull(),
   reportedby: varchar("reportedby", { length: 255 }).notNull(),
-  assignedtechnician: varchar("assignedtechnician", { length: 255 }).notNull(),
+  assignedtechnician: integer("assignedtechnician"),
   prioritylevel: varchar("prioritylevel", { length: 50 }).notNull(),
   maintenancetype: varchar("maintenancetype", { length: 50 }).notNull(),
   workperformed: text("workperformed").notNull(),
@@ -31,4 +31,5 @@ export const reactiveMaintenance = pgTable("reactivemaintenance", {
   attachments: text("attachments").array(),
   preventivemeasures: text("preventivemeasures"),
   vendorinformation: text("vendorinformation"),
+  username: varchar("username"),
 });

@@ -10,7 +10,9 @@
 
 # deps
 node_modules/
-
+# Files and Database
+public/uploads/
+src/db/db.ts
 # env
 .env
 .env.production
@@ -27,6 +29,6 @@ lerna-debug.log*
 # misc
 .DS_Store
 #jpg
-public/uploads/
+
 *.jpg
 dist

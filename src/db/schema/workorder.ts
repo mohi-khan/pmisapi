@@ -22,5 +22,7 @@ export const workorder = pgTable('workorder', {
   totalcost: numeric('totalcost'),
   metervalue: numeric('metervalue'),
   runninghour: numeric('runninghour'),
+  procedure:text('procedure'),
+  observation:text('observation'),
   cancel: boolean('cancel').default(false),
 });

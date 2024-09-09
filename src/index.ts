@@ -5,12 +5,12 @@ import {  type Context } from 'hono';
 import { join } from 'path';
 import { promises as fs }  from 'fs';
 import { existsSync, mkdirSync,createReadStream } from 'fs';
-
 import { cors } from 'hono/cors';
 import { bearerAuth } from 'hono/bearer-auth';
 import bcrypt from "bcryptjs";
+import dayjs from 'dayjs';
 import { ConsoleLogWriter, sql } from 'drizzle-orm' 
-import {eq,ne} from 'drizzle-orm';
+import {eq,ne,gt,and} from 'drizzle-orm';
 import { db } from "./db/db.js";
 import {users} from './db/schema/user.js';
 import { employees } from './db/schema/employee.js';
@@ -25,6 +25,7 @@ import { reactiveMaintenance } from './db/schema/reactivemaintenance.js';
 import { milage } from './db/schema/milage.js';
 import { error } from 'console';
 import dotenv from 'dotenv';
+import { expenses } from "./db/schema/expense.js";
 dotenv.config();
 const app = new Hono()
 
@@ -56,9 +57,10 @@ app.post('/vendor',bearerAuth({ token }), async(c) => {
 
 app.post('/milage',bearerAuth({ token }), async(c) => {
   try{
-  const {equipmentid,milagemeter,runninghours,date}= await  c.req.json();
+  const {equipmentid,milagemeter,runninghours,date,fuelconsumed,fuelunit}= await  c.req.json();
+
   const newmilage=await db.insert(milage).values
-  ({equipmentid:equipmentid,milagemeter:milagemeter,runninghours:runninghours,date:date}).returning();
+  ({equipmentid:equipmentid,milagemeter:milagemeter,runninghours:runninghours,date:date,fuelconsumed:fuelconsumed,fuelunit:fuelunit}).returning();
   
   return c.json({ success: true, data: newmilage },200);
   } catch (error) {
@@ -122,6 +124,8 @@ app.post('/update-workorder', async (c) => {
     totalcost,
     metervalue,
     runninghour,
+    procedure,
+    observation,
     
   } = await c.req.json();
   console.log(workstarttime)
@@ -138,7 +142,9 @@ app.post('/update-workorder', async (c) => {
     attachment,
     totalcost,
     metervalue,
-    runninghour
+    runninghour,
+    procedure,
+    observation,
   };
 
   // Filter out undefined fields
@@ -152,6 +158,50 @@ app.post('/update-workorder', async (c) => {
   } catch (error) {
     console.error(error);
     return c.json({ error: 'Failed to update workorder' }, 500);
+  }
+});
+
+app.post('/update-equipment', async (c) => {
+  const {
+    equipid,
+    equipname,
+      manufactur,
+      model,
+      slno,
+      vendorid,
+      purdate,
+      runninghour,
+      milagemeter,
+      username,
+    
+  } = await c.req.json();
+ 
+ 
+
+  const updatedFields = {
+    equipid,
+    equipname,
+    manufactur,
+    model,
+    slno,
+    vendorid,
+    purdate,
+    runninghour,
+    milagemeter,
+    username
+  };
+  console.log(updatedFields)
+  // Filter out undefined fields
+ 
+  try {
+    await db.update(equipment)
+      .set(updatedFields)
+      .where(eq(equipment.equipmentid, equipid));
+
+    return c.json({ message: 'Workorder updated successfully' });
+  } catch (error) {
+    console.error(error);
+    return c.json({ error: 'Failed to update Equipment' }, 500);
   }
 });
 
@@ -343,6 +393,7 @@ app.post('/reactivemaintenance', async (c) => {
       equipmentlocation,
       warrantyinformation,
       vendorinformation,
+      username,
     } = await c.req.json();
 
     const result = await db.insert(reactiveMaintenance).values({
@@ -365,6 +416,7 @@ app.post('/reactivemaintenance', async (c) => {
       attachments,
       preventivemeasures,
       vendorinformation,
+      username,
     }).returning();
 
     return c.json(result);
@@ -449,7 +501,8 @@ app.get('/equipments/:id',async(c) => {
   location:equipment.location,
   purchasedate:equipment.purchasedate,
   runninghour:equipment.runninghours,
-  milagemeter:equipment.milagemeter
+  milagemeter:equipment.milagemeter,
+  vendor:equipment.vendorid
   }).from(equipment).where(eq(equipment.equipmentid,id));
   //To format BigInt as it is not supported toJson
   const formattedEquipment = myequipment.map(item => ({
@@ -519,9 +572,42 @@ app.get('/fuelhistory/:equipmentid',async(c)=>{
     lastmilage:fuelentry.lastmilage,
     currentmilage:fuelentry.currentmilage,
     runninghour:fuelentry.runninghour,
-    vendorname:fuelentry.vendorname}).from(fuelentry)
+    vendorname:fuelentry.vendorname}).from(fuelentry).where (eq(fuelentry.equipmentid,equipid));
     return c.json(fuelhistory);
   })
+  app.get('/fuelreports/:equipmentid/:formdate/:enddate',async(c)=>{
+    const id=parseInt(c.req.param('equipmentid'));
+    const fdate=c.req.param('formdate');
+    const edate=c.req.param('enddate');
+    const fuelhistory=await db.execute(sql`SELECT 
+    e.equipmentid,
+    e.equipmentname,
+    e.model,
+    m.milagemeter,
+    m.runninghours,
+    m.fuelconsumed,
+    m.date,
+    CASE 
+        WHEN m.milagemeter IS NOT NULL AND m.fuelconsumed > 0 THEN 
+            m.milagemeter / m.fuelconsumed 
+        ELSE 
+            NULL 
+    END AS mileage_per_liter,
+    CASE 
+        WHEN m.runninghours IS NOT NULL AND m.fuelconsumed > 0 THEN 
+            m.runninghours / m.fuelconsumed
+        ELSE 
+            NULL 
+    END AS running_hours_per_liter
+FROM 
+    equipment e
+LEFT JOIN 
+    meterupdate m ON e.equipmentid = m.equipmentid
+
+where m.equipmentid=${id} and date between ${fdate} and ${edate}`)
+     
+       return c.json(fuelhistory.rows);
+    })
     app.get('/workorderhistory/:equipmentid',async(c)=>{
     const equipid=parseInt(c.req.param('equipmentid'))
     const workorderhistory=await db.select({
@@ -543,7 +629,8 @@ app.get('/fuelhistory/:equipmentid',async(c)=>{
       }).from(workorder).leftJoin(vendors,eq(workorder.vendorid,vendors.vendorid)).
       leftJoin(employees,eq(workorder.assignee,employees.employeeid)).
       leftJoin(equipmenttasksch,eq(workorder.taskid,equipmenttasksch.equipmenttaskschid)).
-      leftJoin(tasks,eq(equipmenttasksch.taskid,tasks.taskid))
+      leftJoin(tasks,eq(equipmenttasksch.taskid,tasks.taskid)).where (eq(workorder.equipmentid,equipid));
+      console.log(workorderhistory);
       return c.json(workorderhistory);
     })
     app.get('/reactivehistory/:equipmentid',async(c)=>{
@@ -564,9 +651,39 @@ app.get('/fuelhistory/:equipmentid',async(c)=>{
   preventivemeasures:reactiveMaintenance.preventivemeasures,
   vendorinformation: reactiveMaintenance.vendorinformation,
   attachments: reactiveMaintenance.attachments,
-  }).from(reactiveMaintenance)
+  }).from(reactiveMaintenance).where (eq(reactiveMaintenance.equipmentid,equipid));
       return(c.json(reactivehistory))
     })
+    app.get('/expensehistory/:equipmentid',async(c)=>{
+      const equipid=parseInt(c.req.param('equipmentid'))
+      const expensehistory=await db.select({
+      description:expenses.description,
+      equipmentdesc:equipment.equipmentname,
+      workerid:expenses.workorderid,
+      reactivemaintenanceid:expenses.reactivemaintenanceid,
+      trandate:expenses.trandate,
+      totalcost:expenses.totalcost,
+      comment:expenses.comments,
+      }).from(expenses).leftJoin(equipment,eq(expenses.equipmentid,equipment.equipmentid))
+      .where (eq(expenses.equipmentid,equipid));
+      
+        return c.json(expensehistory);
+      })
+      app.get('/milagehistory/:equipmentid',async(c)=>{
+        const equipid=parseInt(c.req.param('equipmentid'),10)
+        const milagehistory=await db.select({
+        equipmentname:equipment.equipmentname,
+        model:equipment.model,
+        milage:milage.milagemeter,
+        runninghour:milage.runninghours,
+        trandate:milage.date,
+        fuelconsumed:milage.fuelconsumed,
+        fuelunit:milage.fuelunit
+        }).from(milage).leftJoin(equipment,eq(milage.equipmentid,equipment.equipmentid))
+        .where (eq(milage.equipmentid,equipid));
+        
+          return c.json(milagehistory);
+        })
 app.get('/workorders',async(c)=>{
   const wolist=await db.select({
     id:workorder.workorderid,
@@ -739,7 +856,7 @@ app.get('/notificationcount',async(c)=>{
  try{ 
   // Assume 'overdue' is the result from your database query
   const overdue = await db.execute(sql`
-    SELECT count(*),
+    SELECT count(*)::int as count,
       CASE
           WHEN et.nextschdate IS NOT NULL AND et.nextschdate < CURRENT_DATE THEN 'Overdue'
           WHEN et.nextschh IS NOT NULL AND et.nextschh > 0 AND et.nextschh < eq.runninghours THEN 'Overdue'
@@ -833,6 +950,136 @@ app.get('/sparedetails',async(c)=>{
   
     return c.json(formattedParts);
 })
+app.get('/tasklist/:equipid',async(c)=>{
+  const equipid = parseInt(c.req.param('equipid'));
+ 
+  // Query using Drizzle ORM
+  const result = await db.select({  
+    id:workorder.workorderid,
+    taskname:tasks.taskname
+  }).from(workorder)
+  .leftJoin(equipmenttasksch,eq(workorder.taskid,equipmenttasksch.equipmenttaskschid))
+  .leftJoin(tasks,eq(equipmenttasksch.taskid,tasks.taskid))
+  .where(eq(workorder.equipmentid, equipid))
+      
+   
+      return c.json(result);
+ 
+  });
+  app.get('/maintenancelist/:equipid',async(c)=>{
+    const equipid = parseInt(c.req.param('equipid'));
+   
+    // Query using Drizzle ORM
+    const result = await db.select({  
+      id:reactiveMaintenance.maintenanceid,
+      description:reactiveMaintenance.problemdescription
+    }).from(reactiveMaintenance)
+    .where(eq(reactiveMaintenance.equipmentid, equipid))
+        
+     
+        return c.json(result);
+   
+    });
+  app.get('/workorderdet/:workorderid',async(c)=>{
+    const wid = parseInt(c.req.param('workorderid'));
+   
+    // Query using Drizzle ORM
+    const result = await db.select({  
+      id:workorder.workorderid,
+      taskname:tasks.taskname,
+      completedate:workorder.workcompletiontime,
+      name:employees.employeename,
+      position:employees.employeepost,
+      tel:employees.telno,
+      problem:workorder.notes,
+      spares:workorder.spare,
+      procedure:workorder.procedure,
+      observation:workorder.observation,  
+      attachment:workorder.attachment                                                      
+    }).from(workorder)
+    .leftJoin(equipmenttasksch,eq(workorder.taskid,equipmenttasksch.equipmenttaskschid))
+    .leftJoin(tasks,eq(equipmenttasksch.taskid,tasks.taskid))
+    .leftJoin(employees,eq(workorder.assignee,employees.employeeid))    
+    .where(eq(workorder.workorderid, wid))
+        
+     
+        return c.json(result);
+   
+    });
+    app.get('/maintenancedet/:maintenanceid',async(c)=>{
+      const mid = parseInt(c.req.param('maintenanceid'));
+     
+      // Query using Drizzle ORM
+      const result = await db.select({  
+        id:reactiveMaintenance.maintenanceid,
+        taskname:reactiveMaintenance.problemdescription,
+        completedate:reactiveMaintenance.completiondate,
+        name:employees.employeename,
+        position:employees.employeepost,
+        tel:employees.telno,
+        problem:reactiveMaintenance.problemdescription,
+        spares:reactiveMaintenance.partsused,
+        procedure:reactiveMaintenance.workperformed,
+        observation:reactiveMaintenance.preventivemeasures,  
+        attachment:reactiveMaintenance.attachments                                                      
+      }).from(reactiveMaintenance)
+      .leftJoin(employees,eq(reactiveMaintenance.assignedtechnician,employees.employeeid))    
+      .where(eq(reactiveMaintenance.maintenanceid, mid))
+          
+       
+          return c.json(result);
+     
+      });
+app.get('/equipcost/:equipid/month/:month',async(c)=>{
+  const equipid = parseInt(c.req.param('equipid'));
+  const month = parseInt(c.req.param('month'),10);
+  const targetDate = new Date();
+  targetDate.setMonth(targetDate.getMonth() - month);
+  const targetDateString = targetDate.toISOString().split('T')[0];
+  // Query using Drizzle ORM
+  const result = await db
+      .select({
+          total_cost: sql<number>`SUM(${expenses.totalcost})`,
+      })
+      .from(expenses)
+      .where(and(eq(expenses.equipmentid, equipid),gt(expenses.trandate,targetDateString)))
+      
+     const totalCost = result.length > 0 && result[0] ? result[0].total_cost : 0;
+    return c.json({ totalCost });
+ 
+  });
+  app.get('/monthly-total-cost/:equipid', async (c) => {
+    try {
+        const equipid = parseInt(c.req.param('equipid'));
+        const sixMonthsAgo = dayjs().subtract(6, 'month').startOf('month').toDate();
+        const currentMonth = dayjs().startOf('month').toDate();
+
+        const results = await db.execute(sql`
+          SELECT 
+              date_trunc('month', trandate) AS month, 
+              SUM(totalcost) AS total_cost 
+          FROM public.expenses 
+          WHERE trandate >= ${sixMonthsAgo} and equipmentid=${equipid} 
+          GROUP BY date_trunc('month', trandate) 
+          ORDER BY date_trunc('month', trandate)`)
+
+        // Prepare the response with the last 6 months data
+        const months = [];
+        const costs = [];
+
+        for (let i = 5; i >= 0; i--) {
+            const month = dayjs().subtract(i, 'month').startOf('month').format('YYYY-MM');
+            const result = results.rows.find((r: any) => dayjs(r.month).format('YYYY-MM') === month);
+            months.push(month);
+            costs.push(result ? result.total_cost : 0);
+        }
+
+        return c.json({ months, costs });
+    } catch (error) {
+        console.error('Error fetching monthly total costs:', error);
+        return c.json({ error: 'Internal Server Error' }, 500);
+    }
+});
 
 const port =  +(process.env.PORT ?? 8779)
 console.log(`Server is running on port ${port}`)

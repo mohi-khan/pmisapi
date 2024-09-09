@@ -10,8 +10,6 @@ const pool = new pg.Pool({
  user:process.env.USER,
  password:process.env.PASSWORD,
 port:5432,
-ssl:{
-  rejectUnauthorized: false, // Set to true in production with a valid certificate
-},
+
  })
   export const db = drizzle(pool);
