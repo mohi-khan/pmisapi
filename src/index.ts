@@ -903,7 +903,7 @@ app.get('/notificationcount',async(c)=>{
 })
 app.get('/sparedetails',async(c)=>{
   const SparePartSchema = z.object({
-    part_code: z.string(),
+    part_code: z.number(),
     spare_part_name: z.string(),
     equipment_id: z.number(),
     equipment_name: z.string(),
@@ -913,7 +913,7 @@ app.get('/sparedetails',async(c)=>{
   // Define types using Zod schemas
   type SparePart = z.infer<typeof SparePartSchema>;
   interface parts{
-    part_code:string,
+    part_code:number,
     partname: string; 
     equipment_id:number[];
     equipmentdesc: string[] 
