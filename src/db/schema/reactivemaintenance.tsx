@@ -1,4 +1,5 @@
 // schemas/reactivemaintenance.ts
+
 import {
   integer,
   serial,
@@ -8,6 +9,7 @@ import {
   numeric,
   date,
   pgTable,
+  boolean
 } from "drizzle-orm/pg-core";
 
 export const reactiveMaintenance = pgTable("reactivemaintenance", {
@@ -16,7 +18,7 @@ export const reactiveMaintenance = pgTable("reactivemaintenance", {
   datereported: date("datereported").notNull(),
   dateofmaintenance: date("dateofmaintenance").notNull(),
   problemdescription: text("problemdescription").notNull(),
-  reportedby: varchar("reportedby", { length: 255 }).notNull(),
+  reportedby: integer("reportedby"),
   assignedtechnician: integer("assignedtechnician"),
   prioritylevel: varchar("prioritylevel", { length: 50 }).notNull(),
   maintenancetype: varchar("maintenancetype", { length: 50 }).notNull(),
@@ -32,4 +34,5 @@ export const reactiveMaintenance = pgTable("reactivemaintenance", {
   preventivemeasures: text("preventivemeasures"),
   vendorinformation: text("vendorinformation"),
   username: varchar("username"),
+  cancelled:boolean('cancelled')
 });

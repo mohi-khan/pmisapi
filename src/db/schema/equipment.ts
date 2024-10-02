@@ -1,5 +1,6 @@
-import { bigint, date, integer, pgTable,serial, varchar } from "drizzle-orm/pg-core";
+import { bigint, date, integer, pgTable,serial, varchar,numeric } from "drizzle-orm/pg-core";
 import { vendors } from "./vendor.js";
+import { float } from "drizzle-orm/mysql-core/index.js";
 // Define the equipment table schema
 export const equipment = pgTable("equipment", {
   equipmentid: serial('equipmentid').primaryKey(),
@@ -11,10 +12,10 @@ export const equipment = pgTable("equipment", {
   location:varchar('location'),
   purchasedate:date('purchasedate'),
   vendorid:integer('vendorid').references(() => vendors.vendorid),
-  runninghours:integer('runninghours'),
+  runninghours:numeric('runninghours'),
   fuelunits:integer('fuelunits'),
   frequencyofmilageentry:integer('frequencyofmilageentry'),
-  milagemeter:bigint('milagemeter', { mode: 'bigint' }),
+  milagemeter:numeric('milagemeter'),
   username:varchar('username')
 }
   )

@@ -11,7 +11,7 @@ const pool = new pg.Pool({
  password:process.env.PASSWORD,
  port:5432,
  ssl: {
-    rejectUnauthorized: true,  // Set this to false if you don't have the correct certificates
-  },
+    rejectUnauthorized: false // Accepts self-signed certificates
+  }
  })
   export const db = drizzle(pool);

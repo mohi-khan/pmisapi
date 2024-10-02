@@ -1,4 +1,5 @@
-import { pgTable, serial, integer, text, varchar,timestamp, date,jsonb,numeric,boolean } from 'drizzle-orm/pg-core';
+import { config } from 'dotenv';
+import { pgTable, serial, integer, text, varchar,timestamp, date,jsonb,numeric,boolean, PgTimestampString } from 'drizzle-orm/pg-core';
 
 // Define the workorder table schema
 export const workorder = pgTable('workorder', {
@@ -14,8 +15,8 @@ export const workorder = pgTable('workorder', {
   username: varchar('username'),
   created_time: timestamp('created_time'),
   status: varchar('status').default('open'),
-  workstarttime: date('workstarttime'),
-  workcompletiontime: date('workcompletiontime'),
+  workstarttime: timestamp('workstarttime',{mode:"string"}),
+  workcompletiontime: timestamp('workcompletiontime',{mode:"string"}),
   spare: jsonb('spare'),
   complitionnotes: text('complitionnotes'),
   attachment: text('attachment').array(),
@@ -24,5 +25,5 @@ export const workorder = pgTable('workorder', {
   runninghour: numeric('runninghour'),
   procedure:text('procedure'),
   observation:text('observation'),
-  cancel: boolean('cancel').default(false),
+  cancelled: boolean('cancelled').default(false),
 });

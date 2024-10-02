@@ -1,4 +1,4 @@
-import { integer, pgTable,serial,varchar,date } from "drizzle-orm/pg-core";
+import { integer, pgTable,serial,varchar,date, boolean } from "drizzle-orm/pg-core";
 import { equipment } from "./equipment.js";
 import { tasks } from "./tasks.js";
 export const equipmenttasksch=pgTable('equipmenttasksch',{
@@ -15,9 +15,10 @@ export const equipmenttasksch=pgTable('equipmenttasksch',{
     frequencykm:integer('frequencykm'),
     lastperformedkm:integer('lastperformedkm'),
     advanceNoticekm:integer('advanceNoticekm'),
-    nextschdate:varchar('nextschdate'),
+    nextschdate:varchar('nextschdate')||null,
     nextschh:integer('nextschh'),
     nextschk:integer('nextschk'),
+    cancelled:boolean('cancelled')
 })
  
    
