@@ -263,26 +263,26 @@ app.post("/update-workorder", async (c) => {
 app.post("/update-equipment", async (c) => {
   const {
     equipid,
-    equipname,
-    manufactur,
+    equipmentname,
+    manufacturer,
     model,
-    slno,
+    serialnumber,
     vendorid,
-    purdate,
-    runninghour,
+    purchasedate,
+    runninghours,
     milagemeter,
     username,
   } = await c.req.json();
 
   const updatedFields = {
     equipid,
-    equipname,
-    manufactur,
+    equipmentname,
+    manufacturer,
     model,
-    slno,
+    serialnumber,
     vendorid,
-    purdate,
-    runninghour,
+    purchasedate,
+    runninghours,
     milagemeter,
     username,
   };
